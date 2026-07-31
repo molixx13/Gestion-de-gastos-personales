@@ -101,18 +101,24 @@ function HomePage() {
           <h2 className="text-sm font-semibold text-gray-900 mb-3">
             Gastos por Categoría
           </h2>
-          <div ref={expenseChartRef}>
-            {summary && <CategoryChart data={summary.expenseCategories} />}
-          </div>
+          {summary && (
+            <CategoryChart
+              data={summary.expenseCategories}
+              chartRef={expenseChartRef}
+            />
+          )}
         </Card>
 
         <Card>
           <h2 className="text-sm font-semibold text-gray-900 mb-3">
             Ingresos por Categoría
           </h2>
-          <div ref={incomeChartRef}>
-            {summary && <CategoryChart data={summary.incomeCategories} />}
-          </div>
+          {summary && (
+            <CategoryChart
+              data={summary.incomeCategories}
+              chartRef={incomeChartRef}
+            />
+          )}
         </Card>
 
         <div className="flex items-center justify-between">

@@ -137,10 +137,42 @@ export function ExportButton({
 
       if (expenseSummary.length > 0 && expenseChartRef?.current) {
         nextY = await captureChart(doc, expenseChartRef, "Gastos por Categoría", nextY);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.text("Desglose por categoría", 14, nextY + 4);
+        doc.setFont("helvetica", "normal");
+        autoTable(doc, {
+          startY: nextY + 6,
+          head: [["Categoría", "Monto", "Porcentaje"]],
+          body: expenseSummary.map((c) => [
+            c.name,
+            formatCurrency(c.total),
+            `${c.percentage.toFixed(1)}%`,
+          ]),
+          styles: { fontSize: 9 },
+          headStyles: { fillColor: [220, 38, 38] },
+        });
+        nextY = (doc.lastAutoTable?.finalY ?? nextY) + 12;
       }
 
       if (incomeSummary.length > 0 && incomeChartRef?.current) {
         nextY = await captureChart(doc, incomeChartRef, "Ingresos por Categoría", nextY);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.text("Desglose por categoría", 14, nextY + 4);
+        doc.setFont("helvetica", "normal");
+        autoTable(doc, {
+          startY: nextY + 6,
+          head: [["Categoría", "Monto", "Porcentaje"]],
+          body: incomeSummary.map((c) => [
+            c.name,
+            formatCurrency(c.total),
+            `${c.percentage.toFixed(1)}%`,
+          ]),
+          styles: { fontSize: 9 },
+          headStyles: { fillColor: [22, 163, 74] },
+        });
+        nextY = (doc.lastAutoTable?.finalY ?? nextY) + 12;
       }
 
       doc.setFontSize(12);

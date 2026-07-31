@@ -1,11 +1,13 @@
 "use client";
 
+import { type RefObject } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import type { CategorySummary } from "@/types";
 import { formatCurrency } from "@/lib/utils";
 
 interface CategoryChartProps {
   data: CategorySummary[];
+  chartRef?: RefObject<HTMLDivElement>;
 }
 
 const CustomTooltip = ({ active, payload }: any) => {
@@ -22,7 +24,7 @@ const CustomTooltip = ({ active, payload }: any) => {
   );
 };
 
-export function CategoryChart({ data }: CategoryChartProps) {
+export function CategoryChart({ data, chartRef }: CategoryChartProps) {
   if (data.length === 0) {
     return (
       <div className="text-center py-12 text-gray-500">
@@ -33,30 +35,32 @@ export function CategoryChart({ data }: CategoryChartProps) {
 
   return (
     <div className="w-full">
-      <ResponsiveContainer width="100%" height={280}>
-        <PieChart>
-          <Pie
-            data={data}
-            cx="50%"
-            cy="50%"
-            innerRadius={60}
-            outerRadius={100}
-            paddingAngle={3}
-            dataKey="total"
-            nameKey="category.name"
-          >
-            {data.map((entry) => (
-              <Cell key={entry.category.id} fill={entry.category.color} />
-            ))}
-          </Pie>
-          <Tooltip content={<CustomTooltip />} />
-          <Legend
-            formatter={(value: string) => (
-              <span className="text-sm text-gray-600">{value}</span>
-            )}
-          />
-        </PieChart>
-      </ResponsiveContainer>
+      <div ref={chartRef} style={{ width: 400, height: 300 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              cx="50%"
+              cy="50%"
+              innerRadius={60}
+              outerRadius={100}
+              paddingAngle={3}
+              dataKey="total"
+              nameKey="category.name"
+            >
+              {data.map((entry) => (
+                <Cell key={entry.category.id} fill={entry.category.color} />
+              ))}
+            </Pie>
+            <Tooltip content={<CustomTooltip />} />
+            <Legend
+              formatter={(value: string) => (
+                <span className="text-sm text-gray-600">{value}</span>
+              )}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
 
       <div className="mt-4 space-y-2">
         {data.map((item) => (
