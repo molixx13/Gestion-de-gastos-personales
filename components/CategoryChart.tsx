@@ -26,7 +26,7 @@ export function CategoryChart({ data }: CategoryChartProps) {
   if (data.length === 0) {
     return (
       <div className="text-center py-12 text-gray-500">
-        <p>No hay datos de gastos para este mes</p>
+        <p>No hay datos para este mes</p>
       </div>
     );
   }

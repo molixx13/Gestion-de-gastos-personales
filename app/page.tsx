@@ -94,7 +94,14 @@ function HomePage() {
           <h2 className="text-sm font-semibold text-gray-900 mb-3">
             Gastos por Categoría
           </h2>
-          {summary && <CategoryChart data={summary.categories} />}
+          {summary && <CategoryChart data={summary.expenseCategories} />}
+        </Card>
+
+        <Card>
+          <h2 className="text-sm font-semibold text-gray-900 mb-3">
+            Ingresos por Categoría
+          </h2>
+          {summary && <CategoryChart data={summary.incomeCategories} />}
         </Card>
 
         <div className="flex items-center justify-between">

@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import type { Category, Transaction, Budget, MonthlySummary } from "@/types";
+import type { Category, Transaction, Budget, MonthlySummary, CategorySummary } from "@/types";
 
 function getSupabase() {
   return createClient();
@@ -123,35 +123,44 @@ export const transactions = {
       .filter((t) => t.type === "expense")
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const expenseByCategory = new Map<string, { category: Category; total: number; count: number }>();
+    const groupByCategory = (
+      type: "income" | "expense",
+    ): CategorySummary[] => {
+      const byCategory = new Map<string, { category: Category; total: number; count: number }>();
 
-    tx.filter((t) => t.type === "expense").forEach((t) => {
-      if (!t.category) return;
-      const existing = expenseByCategory.get(t.category_id);
-      if (existing) {
-        existing.total += t.amount;
-        existing.count += 1;
-      } else {
-        expenseByCategory.set(t.category_id, {
-          category: t.category,
-          total: t.amount,
-          count: 1,
-        });
-      }
-    });
+      tx.filter((t) => t.type === type).forEach((t) => {
+        if (!t.category) return;
+        const existing = byCategory.get(t.category_id);
+        if (existing) {
+          existing.total += t.amount;
+          existing.count += 1;
+        } else {
+          byCategory.set(t.category_id, {
+            category: t.category,
+            total: t.amount,
+            count: 1,
+          });
+        }
+      });
 
-    const categories = Array.from(expenseByCategory.values()).map((c) => ({
-      category: c.category,
-      total: c.total,
-      percentage: totalExpense > 0 ? (c.total / totalExpense) * 100 : 0,
-      transactionCount: c.count,
-    }));
+      const typeTotal = type === "income" ? totalIncome : totalExpense;
+
+      return Array.from(byCategory.values())
+        .map((c) => ({
+          category: c.category,
+          total: c.total,
+          percentage: typeTotal > 0 ? (c.total / typeTotal) * 100 : 0,
+          transactionCount: c.count,
+        }))
+        .sort((a, b) => b.total - a.total);
+    };
 
     return {
       totalIncome,
       totalExpense,
       balance: totalIncome - totalExpense,
-      categories: categories.sort((a, b) => b.total - a.total),
+      expenseCategories: groupByCategory("expense"),
+      incomeCategories: groupByCategory("income"),
     };
   },
 };

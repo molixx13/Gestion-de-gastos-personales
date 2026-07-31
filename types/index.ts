@@ -48,5 +48,6 @@ export interface MonthlySummary {
   totalIncome: number;
   totalExpense: number;
   balance: number;
-  categories: CategorySummary[];
+  expenseCategories: CategorySummary[];
+  incomeCategories: CategorySummary[];
 }
