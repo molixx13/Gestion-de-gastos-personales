@@ -4,9 +4,10 @@ import { es } from "date-fns/locale";
 export { dateFnsFormat as format };
 
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("es-ES", {
+  return new Intl.NumberFormat("es-CO", {
     style: "currency",
-    currency: "EUR",
+    currency: "COP",
+    maximumFractionDigits: 0,
   }).format(amount);
 }
 

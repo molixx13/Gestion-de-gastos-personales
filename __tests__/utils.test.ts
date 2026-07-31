@@ -2,11 +2,10 @@ import { describe, it, expect } from "vitest";
 import { formatCurrency, cn } from "@/lib/utils";
 
 describe("formatCurrency", () => {
-  it("formats positive numbers", () => {
+  it("formats positive numbers in COP", () => {
     const result = formatCurrency(1234.5);
-    expect(result).toMatch(/1\.?234/);
-    expect(result).toContain("50");
-    expect(result).toContain("€");
+    expect(result).toMatch(/1\.?235/);
+    expect(result).toContain("$");
   });
 
   it("formats zero", () => {
@@ -14,9 +13,15 @@ describe("formatCurrency", () => {
     expect(result).toContain("0");
   });
 
-  it("formats decimal values", () => {
+  it("rounds decimals to whole pesos", () => {
     const result = formatCurrency(0.99);
-    expect(result).toMatch(/0[,.]99/);
+    expect(result).toMatch(/1/);
+    expect(result).toContain("$");
+  });
+
+  it("uses thousands separator", () => {
+    const result = formatCurrency(1234567);
+    expect(result).toContain("1.234.567");
   });
 });
 
