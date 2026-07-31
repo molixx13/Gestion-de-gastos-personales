@@ -1,39 +1,55 @@
-# Gestión de Gastos Personales 💰
+# Gestión de Gastos Personales
 
-Aplicación web **mobile-first** para el seguimiento de gastos e ingresos personales, construida con Next.js (PWA), TypeScript, Tailwind CSS, Supabase y Recharts. Incluye autenticación, gráficas por categoría, presupuestos y exportación de datos (CSV, PDF y copia de seguridad).
+Aplicación web mobile-first para el seguimiento de gastos e ingresos personales, construida con Next.js (PWA), TypeScript, Tailwind CSS, Supabase y Recharts. Incluye autenticación, visualización de estadísticas y exportación de datos.
 
-## ✨ Características
+## Contenido
 
-- 🔐 **Autenticación** con Supabase Auth (registro, inicio de sesión y sesión persistente)
-- 📊 **Dashboard** con resumen mensual (ingresos, gastos, balance) y gráficas donut por categoría
-- 💸 **Gestión de transacciones** (CRUD completo) con filtro por mes, búsqueda y tipos ingreso/gasto
-- 🗂️ **Categorías personalizables** con iconos y colores
-- 📄 **Exportación de datos** en CSV (compatible con Excel: UTF-8 BOM + separador `;`), PDF (con gráficas y desglose por porcentajes) y backup JSON
-- 📱 **PWA instalable** con service worker y manifest
-- 🎨 **Mobile-first** con navegación inferior, FAB y diseño responsive
-- 🧪 **Tests** con Vitest + Testing Library
+- [Características](#caracter%C3%ADsticas)
+- [Stack](#stack)
+- [Empezar](#empezar)
+  - [Requisitos](#requisitos)
+  - [Clonar e instalar](#clonar-e-instalar)
+  - [Variables de entorno](#variables-de-entorno)
+  - [Base de datos / Migraciones](#base-de-datos--migraciones)
+  - [Ejecutar la aplicación](#ejecutar-la-aplicaci%C3%B3n)
+- [Scripts disponibles](#scripts-disponibles)
+- [Integración continua](#integraci%C3%B3n-continua)
+- [Estructura del proyecto](#estructura-del-proyecto)
+- [Despliegue en Vercel](#despliegue-en-vercel)
+- [Licencia](#licencia)
 
-## 🧰 Stack
+## Características
+
+- Autenticación con Supabase Auth (registro, inicio de sesión y sesión persistente).
+- Dashboard con resumen mensual (ingresos, gastos, balance) y gráficos por categoría.
+- Gestión de transacciones (crear, leer, actualizar, eliminar) con filtros por mes, búsqueda y distinción entre ingresos y gastos.
+- Categorías personalizables con iconos y colores.
+- Exportación de datos a CSV (compatible con Excel: UTF-8 BOM + separador `;`), PDF (con gráficos y desglose por porcentajes) y backup en JSON.
+- Aplicación PWA instalable con service worker y manifest.
+- Diseño Mobile-first y responsive.
+- Tests con Vitest y Testing Library.
+
+## Stack
 
 | Tecnología | Uso |
 |------------|-----|
 | [Next.js 14](https://nextjs.org) (App Router) | Framework, renderizado y PWA |
 | [TypeScript](https://www.typescriptlang.org) | Tipado estático |
 | [Tailwind CSS](https://tailwindcss.com) | Estilos |
-| [Supabase](https://supabase.com) | Autenticación + PostgreSQL |
+| [Supabase](https://supabase.com) | Autenticación y PostgreSQL |
 | [Recharts](https://recharts.org) | Gráficas |
-| [jsPDF](https://github.com/parallax/jsPDF) | Exportación PDF |
-| [PapaParse](https://www.papaparse.com) | Exportación CSV |
+| [jsPDF](https://github.com/parallax/jsPDF) | Exportación a PDF |
+| [PapaParse](https://www.papaparse.com) | Exportación a CSV |
 | [Vitest](https://vitest.dev) + Testing Library | Tests unitarios y de componentes |
 
-## 🚀 Empezar
+## Empezar
 
 ### Requisitos
 
-- Node.js 18.17 o superior
-- Una cuenta en [Supabase](https://supabase.com)
+- Node.js 18.17 o superior.
+- Cuenta en Supabase.
 
-### 1. Clonar e instalar
+### Clonar e instalar
 
 ```bash
 git clone https://github.com/molixx13/Gestion-de-gastos-personales.git
@@ -41,9 +57,9 @@ cd Gestion-de-gastos-personales
 npm install
 ```
 
-### 2. Configurar variables de entorno
+### Variables de entorno
 
-Copia el archivo `.env.example` a `.env.local` y completa las claves:
+Copia el archivo `.env.example` a `.env.local` y completa las claves necesarias:
 
 ```bash
 cp .env.example .env.local
@@ -54,22 +70,22 @@ cp .env.example .env.local
 | `NEXT_PUBLIC_SUPABASE_URL` | URL del proyecto Supabase (Dashboard → Settings → API) |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clave pública `anon` del proyecto Supabase |
 
-### 3. Configurar la base de datos
+### Base de datos / Migraciones
 
-Crea un proyecto en Supabase y ejecuta las migraciones del directorio [`supabase/migrations/`](supabase/migrations) en el SQL Editor:
+Crea un proyecto en Supabase y aplica las migraciones del directorio `supabase/migrations/` en el SQL Editor del dashboard.
 
-1. `00001_initial_schema.sql` — esquema completo (tablas `profiles`, `categories`, `transactions`, `budgets`), Row Level Security, índices y trigger para crear el perfil al registrarse.
-2. `00002_user_id_defaults.sql` — red de seguridad: asigna `user_id` automáticamente desde la sesión.
+- `00001_initial_schema.sql` — Esquema inicial: tablas `profiles`, `categories`, `transactions`, `budgets`; Row Level Security; índices y trigger para crear perfil al registrarse.
+- `00002_user_id_defaults.sql` — Ajustes para asignar `user_id` desde la sesión por defecto.
 
-### 4. Ejecutar la aplicación
+### Ejecutar la aplicación
 
 ```bash
 npm run dev
 ```
 
-Abre [http://localhost:3000](http://localhost:3000).
+Abre http://localhost:3000 en tu navegador.
 
-## 📝 Scripts
+## Scripts disponibles
 
 | Comando | Descripción |
 |---------|-------------|
@@ -81,15 +97,15 @@ Abre [http://localhost:3000](http://localhost:3000).
 | `npm test` | Ejecuta la suite de tests |
 | `npm run test:watch` | Ejecuta tests en modo watch |
 
-## 🔄 Integración continua
+## Integración continua
 
-El proyecto incluye un workflow de [GitHub Actions](.github/workflows/ci.yml) que se ejecuta en cada push y pull request hacia `main`, verificando:
+El repositorio incluye un workflow de GitHub Actions en `.github/workflows/ci.yml` que se ejecuta en cada push y pull request hacia la rama por defecto. Este workflow ejecuta lint, typecheck y tests:
 
 - `npm run lint`
 - `npm run typecheck`
 - `npm test`
 
-## 📁 Estructura del proyecto
+## Estructura del proyecto
 
 ```
 ├── app/                    # Páginas (App Router) y rutas API
@@ -107,12 +123,12 @@ El proyecto incluye un workflow de [GitHub Actions](.github/workflows/ci.yml) qu
 └── __tests__/              # Tests (Vitest + Testing Library)
 ```
 
-## 🚢 Despliegue en Vercel
+## Despliegue en Vercel
 
-1. Importa el repositorio en [Vercel](https://vercel.com).
-2. Añade las variables de entorno `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` en **Settings → Environment Variables**.
-3. Despliega — no se requiere configuración adicional.
+1. Importa el repositorio en Vercel.
+2. Añade las variables de entorno `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` en Settings → Environment Variables.
+3. Despliega; no se requiere configuración adicional.
 
-## 📄 Licencia
+## Licencia
 
 Este proyecto es de uso personal. Todos los derechos reservados.
