@@ -18,6 +18,25 @@ interface ExportButtonProps {
 export function ExportButton({ transactions: txs, month }: ExportButtonProps) {
   const [exporting, setExporting] = useState(false);
 
+  const summarizeByCategory = (type: "income" | "expense") => {
+    const typeTxs = txs.filter((t) => t.type === type);
+    const typeTotal = typeTxs.reduce((s, t) => s + t.amount, 0);
+
+    const byCategory = new Map<string, number>();
+    typeTxs.forEach((t) => {
+      const key = t.category?.name ?? "Sin categoría";
+      byCategory.set(key, (byCategory.get(key) ?? 0) + t.amount);
+    });
+
+    return Array.from(byCategory.entries())
+      .map(([name, total]) => ({
+        name,
+        total,
+        percentage: typeTotal > 0 ? (total / typeTotal) * 100 : 0,
+      }))
+      .sort((a, b) => b.total - a.total);
+  };
+
   const exportCSV = () => {
     const data = txs.map((tx) => ({
       Fecha: formatDate(tx.date),
@@ -59,6 +78,54 @@ export function ExportButton({ transactions: txs, month }: ExportButtonProps) {
     doc.text(`Gastos: ${formatCurrency(totalExpense)}`, 14, 44);
     doc.text(`Balance: ${formatCurrency(totalIncome - totalExpense)}`, 14, 50);
 
+    const expenseSummary = summarizeByCategory("expense");
+    const incomeSummary = summarizeByCategory("income");
+
+    let nextY = 56;
+
+    if (expenseSummary.length > 0) {
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("Gastos por Categoría", 14, nextY + 4);
+      doc.setFont("helvetica", "normal");
+      autoTable(doc, {
+        startY: nextY + 8,
+        head: [["Categoría", "Monto", "Porcentaje"]],
+        body: expenseSummary.map((c) => [
+          c.name,
+          formatCurrency(c.total),
+          `${c.percentage.toFixed(1)}%`,
+        ]),
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [220, 38, 38] },
+      });
+      nextY = (doc.lastAutoTable?.finalY ?? nextY) + 14;
+    }
+
+    if (incomeSummary.length > 0) {
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("Ingresos por Categoría", 14, nextY + 4);
+      doc.setFont("helvetica", "normal");
+      autoTable(doc, {
+        startY: nextY + 8,
+        head: [["Categoría", "Monto", "Porcentaje"]],
+        body: incomeSummary.map((c) => [
+          c.name,
+          formatCurrency(c.total),
+          `${c.percentage.toFixed(1)}%`,
+        ]),
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [22, 163, 74] },
+      });
+      nextY = (doc.lastAutoTable?.finalY ?? nextY) + 14;
+    }
+
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("Detalle de Transacciones", 14, nextY + 4);
+    doc.setFont("helvetica", "normal");
+
     const tableData = txs.map((tx) => [
       formatDate(tx.date),
       tx.type === "expense" ? "Gasto" : "Ingreso",
@@ -68,7 +135,7 @@ export function ExportButton({ transactions: txs, month }: ExportButtonProps) {
     ]);
 
     autoTable(doc, {
-      startY: 56,
+      startY: nextY + 8,
       head: [["Fecha", "Tipo", "Categoría", "Descripción", "Monto"]],
       body: tableData,
       styles: { fontSize: 8 },

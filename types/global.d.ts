@@ -24,6 +24,12 @@ declare module "@supabase/ssr" {
   ): SupabaseClient;
 }
 
+declare module "jspdf" {
+  interface jsPDF {
+    lastAutoTable?: { finalY: number };
+  }
+}
+
 declare module "jspdf-autotable" {
   import jsPDF from "jspdf";
 
