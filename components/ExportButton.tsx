@@ -1,21 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type RefObject } from "react";
 import { Button } from "@/components/ui/Button";
-import { transactions } from "@/lib/db";
-import { getMonthRange, formatCurrency, formatDate } from "@/lib/utils";
-import { Download, FileText, FileSpreadsheet } from "lucide-react";
+import { formatCurrency, formatDate } from "@/lib/utils";
+import { FileText, FileSpreadsheet } from "lucide-react";
 import Papa from "papaparse";
 import jsPDF from "jspdf";
 import { autoTable } from "jspdf-autotable";
+import html2canvas from "html2canvas";
 import type { Transaction } from "@/types";
 
 interface ExportButtonProps {
   transactions: Transaction[];
   month: string;
+  expenseChartRef?: RefObject<HTMLDivElement>;
+  incomeChartRef?: RefObject<HTMLDivElement>;
 }
 
-export function ExportButton({ transactions: txs, month }: ExportButtonProps) {
+const PAGE_BOTTOM = 285;
+
+export function ExportButton({
+  transactions: txs,
+  month,
+  expenseChartRef,
+  incomeChartRef,
+}: ExportButtonProps) {
   const [exporting, setExporting] = useState(false);
 
   const summarizeByCategory = (type: "income" | "expense") => {
@@ -45,84 +54,37 @@ export function ExportButton({ transactions: txs, month }: ExportButtonProps) {
       .sort((a, b) => b.total - a.total);
   };
 
-  const hexToRgb = (hex: string): [number, number, number] => {
-    const clean = hex.replace("#", "");
-    const n = parseInt(clean, 16);
-    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-  };
-
-  const polarToXY = (
-    cx: number,
-    cy: number,
-    r: number,
-    angleDeg: number,
-  ): [number, number] => {
-    const a = ((angleDeg - 90) * Math.PI) / 180;
-    return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
-  };
-
-  const donutSlicePath = (
-    cx: number,
-    cy: number,
-    rOuter: number,
-    rInner: number,
-    startAngle: number,
-    endAngle: number,
-  ) => {
-    const sweep = endAngle - startAngle;
-    const largeArc = sweep > 180 ? 1 : 0;
-    const [x1, y1] = polarToXY(cx, cy, rOuter, startAngle);
-    const [x2, y2] = polarToXY(cx, cy, rOuter, endAngle);
-    const [x3, y3] = polarToXY(cx, cy, rInner, endAngle);
-    const [x4, y4] = polarToXY(cx, cy, rInner, startAngle);
-    return `M ${x1} ${y1} A ${rOuter} ${rOuter} 0 ${largeArc} 1 ${x2} ${y2} L ${x3} ${y3} A ${rInner} ${rInner} 0 ${largeArc} 0 ${x4} ${y4} Z`;
-  };
-
-  const drawDonutChart = (
+  const captureChart = async (
     doc: jsPDF,
-    summary: ReturnType<typeof summarizeByCategory>,
+    ref: RefObject<HTMLDivElement> | undefined,
+    title: string,
     startY: number,
-  ): number => {
-    if (summary.length === 0) return startY;
+  ): Promise<number> => {
+    if (!ref?.current) return startY;
 
-    const cx = 32;
-    const cy = startY + 28;
-    const rOuter = 20;
-    const rInner = 12;
-    const total = summary.reduce((s, c) => s + c.total, 0);
-    let angle = 0;
-
-    summary.forEach((c) => {
-      const sweep = (c.total / total) * 360;
-      const [r, g, b] = hexToRgb(c.color);
-      doc.setFillColor(r, g, b);
-      doc.path(
-        donutSlicePath(cx, cy, rOuter, rInner, angle, angle + sweep) as unknown as any[],
-        "FD",
-      );
-      angle += sweep;
+    const canvas = await html2canvas(ref.current, {
+      backgroundColor: "#ffffff",
+      scale: 2,
+      useCORS: true,
     });
 
-    doc.setFontSize(10);
-    doc.setTextColor(60, 60, 60);
-    doc.text(`${total.toFixed(2)} €`, cx - 8, cy);
-    doc.setTextColor(0, 0, 0);
+    const imgData = canvas.toDataURL("image/png");
+    const imgWidth = 180;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-    let ly = startY + 8;
-    doc.setFontSize(9);
-    summary.forEach((c) => {
-      const [r, g, b] = hexToRgb(c.color);
-      doc.setFillColor(r, g, b);
-      doc.rect(58, ly - 3, 4, 4, "F");
-      doc.text(
-        `${c.name}: ${c.total.toFixed(2)} € (${c.percentage.toFixed(1)}%)`,
-        65,
-        ly,
-      );
-      ly += 6;
-    });
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text(title, 14, startY + 4);
+    doc.setFont("helvetica", "normal");
 
-    return Math.max(cy + rOuter, ly) + 8;
+    let y = startY + 8;
+    if (y + imgHeight > PAGE_BOTTOM) {
+      doc.addPage();
+      y = 20;
+    }
+
+    doc.addImage(imgData, "PNG", 14, y, imgWidth, imgHeight);
+    return y + imgHeight + 10;
   };
 
   const exportCSV = () => {
@@ -146,69 +108,66 @@ export function ExportButton({ transactions: txs, month }: ExportButtonProps) {
     URL.revokeObjectURL(url);
   };
 
-  const exportPDF = () => {
-    const doc = new jsPDF();
+  const exportPDF = async () => {
+    setExporting(true);
+    try {
+      const doc = new jsPDF();
 
-    doc.setFontSize(18);
-    doc.text("Resumen de Gastos", 14, 22);
-    doc.setFontSize(11);
-    doc.text(`Período: ${month}`, 14, 30);
+      doc.setFontSize(18);
+      doc.text("Resumen de Gastos", 14, 22);
+      doc.setFontSize(11);
+      doc.text(`Período: ${month}`, 14, 30);
 
-    const totalIncome = txs
-      .filter((t) => t.type === "income")
-      .reduce((s, t) => s + t.amount, 0);
-    const totalExpense = txs
-      .filter((t) => t.type === "expense")
-      .reduce((s, t) => s + t.amount, 0);
+      const totalIncome = txs
+        .filter((t) => t.type === "income")
+        .reduce((s, t) => s + t.amount, 0);
+      const totalExpense = txs
+        .filter((t) => t.type === "expense")
+        .reduce((s, t) => s + t.amount, 0);
 
-    doc.setFontSize(10);
-    doc.text(`Ingresos: ${formatCurrency(totalIncome)}`, 14, 38);
-    doc.text(`Gastos: ${formatCurrency(totalExpense)}`, 14, 44);
-    doc.text(`Balance: ${formatCurrency(totalIncome - totalExpense)}`, 14, 50);
+      doc.setFontSize(10);
+      doc.text(`Ingresos: ${formatCurrency(totalIncome)}`, 14, 38);
+      doc.text(`Gastos: ${formatCurrency(totalExpense)}`, 14, 44);
+      doc.text(`Balance: ${formatCurrency(totalIncome - totalExpense)}`, 14, 50);
 
-    const expenseSummary = summarizeByCategory("expense");
-    const incomeSummary = summarizeByCategory("income");
+      const expenseSummary = summarizeByCategory("expense");
+      const incomeSummary = summarizeByCategory("income");
 
-    let nextY = 56;
+      let nextY = 56;
 
-    if (expenseSummary.length > 0) {
+      if (expenseSummary.length > 0 && expenseChartRef?.current) {
+        nextY = await captureChart(doc, expenseChartRef, "Gastos por Categoría", nextY);
+      }
+
+      if (incomeSummary.length > 0 && incomeChartRef?.current) {
+        nextY = await captureChart(doc, incomeChartRef, "Ingresos por Categoría", nextY);
+      }
+
       doc.setFontSize(12);
       doc.setFont("helvetica", "bold");
-      doc.text("Gastos por Categoría", 14, nextY + 4);
+      doc.text("Detalle de Transacciones", 14, nextY + 4);
       doc.setFont("helvetica", "normal");
-      nextY = drawDonutChart(doc, expenseSummary, nextY + 8) + 4;
+
+      const tableData = txs.map((tx) => [
+        formatDate(tx.date),
+        tx.type === "expense" ? "Gasto" : "Ingreso",
+        tx.category?.name ?? "",
+        tx.description ?? "",
+        `${tx.type === "expense" ? "-" : "+"}${tx.amount.toFixed(2)}`,
+      ]);
+
+      autoTable(doc, {
+        startY: nextY + 8,
+        head: [["Fecha", "Tipo", "Categoría", "Descripción", "Monto"]],
+        body: tableData,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [59, 130, 246] },
+      });
+
+      doc.save(`gastos-${month}.pdf`);
+    } finally {
+      setExporting(false);
     }
-
-    if (incomeSummary.length > 0) {
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "bold");
-      doc.text("Ingresos por Categoría", 14, nextY + 4);
-      doc.setFont("helvetica", "normal");
-      nextY = drawDonutChart(doc, incomeSummary, nextY + 8) + 4;
-    }
-
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text("Detalle de Transacciones", 14, nextY + 4);
-    doc.setFont("helvetica", "normal");
-
-    const tableData = txs.map((tx) => [
-      formatDate(tx.date),
-      tx.type === "expense" ? "Gasto" : "Ingreso",
-      tx.category?.name ?? "",
-      tx.description ?? "",
-      `${tx.type === "expense" ? "-" : "+"}${tx.amount.toFixed(2)}`,
-    ]);
-
-    autoTable(doc, {
-      startY: nextY + 8,
-      head: [["Fecha", "Tipo", "Categoría", "Descripción", "Monto"]],
-      body: tableData,
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [59, 130, 246] },
-    });
-
-    doc.save(`gastos-${month}.pdf`);
   };
 
   return (

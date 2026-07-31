@@ -9,7 +9,7 @@ import { ExportButton } from "@/components/ExportButton";
 import { useMonthlySummary, useTransactions } from "@/hooks/useTransactions";
 import { useCategories } from "@/hooks/useCategories";
 import { formatCurrency, format } from "@/lib/utils";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { TransactionForm } from "@/components/TransactionForm";
 import { transactions as txDb } from "@/lib/db";
@@ -22,6 +22,8 @@ function HomePage() {
   const { categories } = useCategories("expense");
   const [editTx, setEditTx] = useState<Transaction | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const expenseChartRef = useRef<HTMLDivElement>(null);
+  const incomeChartRef = useRef<HTMLDivElement>(null);
 
   const currentMonth = format(new Date(monthRange.start), "MMMM yyyy");
 
@@ -51,7 +53,12 @@ function HomePage() {
             <h1 className="text-xl font-bold">Mis Gastos</h1>
             <p className="text-sm text-gray-500 capitalize">{currentMonth}</p>
           </div>
-          <ExportButton transactions={txs} month={currentMonth} />
+          <ExportButton
+            transactions={txs}
+            month={currentMonth}
+            expenseChartRef={expenseChartRef}
+            incomeChartRef={incomeChartRef}
+          />
         </div>
 
         {summaryLoading ? (
@@ -94,14 +101,18 @@ function HomePage() {
           <h2 className="text-sm font-semibold text-gray-900 mb-3">
             Gastos por Categoría
           </h2>
-          {summary && <CategoryChart data={summary.expenseCategories} />}
+          <div ref={expenseChartRef}>
+            {summary && <CategoryChart data={summary.expenseCategories} />}
+          </div>
         </Card>
 
         <Card>
           <h2 className="text-sm font-semibold text-gray-900 mb-3">
             Ingresos por Categoría
           </h2>
-          {summary && <CategoryChart data={summary.incomeCategories} />}
+          <div ref={incomeChartRef}>
+            {summary && <CategoryChart data={summary.incomeCategories} />}
+          </div>
         </Card>
 
         <div className="flex items-center justify-between">
