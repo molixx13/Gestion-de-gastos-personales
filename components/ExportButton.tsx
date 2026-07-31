@@ -27,8 +27,10 @@ export function ExportButton({ transactions: txs, month }: ExportButtonProps) {
       Monto: tx.amount.toFixed(2),
     }));
 
-    const csv = Papa.unparse(data);
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const csv = "\uFEFF" + Papa.unparse(data, { delimiter: ";" });
+    const blob = new Blob([csv], {
+      type: "text/csv;charset=utf-8;header=present",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
